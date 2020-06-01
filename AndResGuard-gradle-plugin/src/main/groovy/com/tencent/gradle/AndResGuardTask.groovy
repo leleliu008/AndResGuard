@@ -35,7 +35,7 @@ class AndResGuardTask extends DefaultTask {
         String variantName = this.name["resguard".length()..-1]
         if (variantName.equalsIgnoreCase(variant.buildType.name as String) || isTargetFlavor(variantName,
             variant.productFlavors, variant.buildType.name) ||
-            variantName.equalsIgnoreCase(AndResGuardPlugin.USE_APK_TASK_NAME)) {
+            variantName.startsWith(AndResGuardPlugin.USE_APK_TASK_NAME)) {
 
           def outputFile = null
           try {
@@ -95,22 +95,22 @@ class AndResGuardTask extends DefaultTask {
     project.logger.info("[AndResGuard] BuildConfigs:$buildConfigs")
 
     buildConfigs.each { config ->
-      if (config.taskName == AndResGuardPlugin.USE_APK_TASK_NAME) {
-        if (StringUtil.isBlank(configuration.sourceApk) || !new File(configuration.sourceApk).exists()) {
-          throw new PathNotExist("Original APK not existed for " + AndResGuardPlugin.USE_APK_TASK_NAME)
+      if (config.taskName.toString().startsWith(AndResGuardPlugin.USE_APK_TASK_NAME)) {
+        File apkFile = new File(configuration.sourceApk);
+        if (StringUtil.isBlank(configuration.sourceApk) || !apkFile.exists()) {
+          throw new PathNotExist("The source APK(%s) doesn't exist: " + apkFile.getAbsolutePath())
         }
-        if (config.flavors.productFlavors.size() > 0 && StringUtil.isBlank(configuration.sourceFlavor)) {
+        if (config.flavors.size() > 0 && StringUtil.isBlank(configuration.sourceFlavor)) {
           throw new RuntimeException("Must setup sourceFlavor when flavors exist in build.gradle")
         }
         if (StringUtil.isBlank(configuration.sourceBuildType)) {
           throw new RuntimeException("Must setup sourceBuildType when flavors exist in build.gradle")
         }
         if (config.buildType == configuration.sourceBuildType) {
-          if (StringUtil.isBlank(configuration.sourceFlavor) || (StringUtil.isPresent(configuration.sourceFlavor) &&
-              config.flavors.size() >
-              0 &&
-              config.flavors.get(0).name ==
-              configuration.sourceFlavor)) {
+          if (StringUtil.isBlank(configuration.sourceFlavor)
+              || (StringUtil.isPresent(configuration.sourceFlavor)
+                  && config.flavors.size() > 0
+                  && config.flavors.get(0).name == configuration.sourceFlavor)) {
             RunGradleTask(config, configuration.sourceApk, config.minSDKVersion)
           }
         }
